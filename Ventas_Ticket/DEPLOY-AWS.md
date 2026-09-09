@@ -13,6 +13,7 @@ Internet ---> [Servidor A: Nginx :80/:443 -> Kestrel :5000] ---> (red privada) -
 
 ---
 
+
 ## 0. Antes de empezar
 
 - Crea un par de llaves (key pair) en EC2 para poder conectarte por SSH a ambas instancias.
