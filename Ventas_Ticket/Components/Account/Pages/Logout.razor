@@ -1,0 +1,23 @@
+@page "/Account/Logout"
+@using Microsoft.AspNetCore.Identity
+@using Ventas_Ticket.Components.Account
+@using Ventas_Ticket.Models
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Cerrar sesion</PageTitle>
+
+<h1>¿Cerrar sesion?</h1>
+
+<form method="post" @onsubmit="LogoutUser">
+    <button type="submit" class="btn btn-primary">Cerrar sesion</button>
+</form>
+
+@code {
+    public async Task LogoutUser()
+    {
+        await SignInManager.SignOutAsync();
+        RedirectManager.RedirectTo("/");
+    }
+}

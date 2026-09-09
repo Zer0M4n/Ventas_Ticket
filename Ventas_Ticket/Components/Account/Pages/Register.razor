@@ -1,0 +1,95 @@
+@page "/Account/Register"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using Ventas_Ticket.Components.Account
+@using Ventas_Ticket.Models
+
+@inject UserManager<ApplicationUser> UserManager
+@inject IUserStore<ApplicationUser> UserStore
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Registrarse</PageTitle>
+
+<h1>Crear una cuenta</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <StatusMessage Message="@errorMessage" />
+        <EditForm Model="Input" method="post" OnValidSubmit="RegisterUser" FormName="register">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="nombre@ejemplo.com" />
+                <label>Correo electronico</label>
+                <ValidationMessage For="() => Input.Email" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.NombreCompleto" class="form-control" placeholder="Tu nombre" />
+                <label>Nombre completo (opcional)</label>
+            </div>
+            <div class="form-floating mb-3">
+                <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="contrasena" />
+                <label>Contrasena</label>
+                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputText type="password" @bind-Value="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="confirmar contrasena" />
+                <label>Confirmar contrasena</label>
+                <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
+            </div>
+            <button type="submit" class="w-100 btn btn-lg btn-primary">Registrarse</button>
+        </EditForm>
+    </div>
+</div>
+
+<p>
+    <a href="Account/Login">¿Ya tienes una cuenta? Inicia sesion</a>
+</p>
+
+@code {
+    private string? errorMessage;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    public async Task RegisterUser(EditContext editContext)
+    {
+        var user = new ApplicationUser { NombreCompleto = Input.NombreCompleto };
+
+        await UserStore.SetUserNameAsync(user, Input.Email, CancellationToken.None);
+        var emailStore = (IUserEmailStore<ApplicationUser>)UserStore;
+        await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
+
+        var result = await UserManager.CreateAsync(user, Input.Password);
+
+        if (!result.Succeeded)
+        {
+            errorMessage = "Error: " + string.Join(", ", result.Errors.Select(e => e.Description));
+            return;
+        }
+
+        await SignInManager.SignInAsync(user, isPersistent: false);
+        RedirectManager.RedirectTo(ReturnUrl ?? "/");
+    }
+
+    private sealed class InputModel
+    {
+        [Required(ErrorMessage = "El correo es obligatorio.")]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        public string? NombreCompleto { get; set; }
+
+        [Required(ErrorMessage = "La contrasena es obligatoria.")]
+        [StringLength(100, ErrorMessage = "La contrasena debe tener al menos {2} caracteres.", MinimumLength = 6)]
+        public string Password { get; set; } = "";
+
+        [Compare("Password", ErrorMessage = "Las contrasenas no coinciden.")]
+        public string ConfirmPassword { get; set; } = "";
+    }
+}

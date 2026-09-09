@@ -1,0 +1,11 @@
+@if (!string.IsNullOrEmpty(Message))
+{
+    <div class="alert @(Message.StartsWith("Error") ? "alert-danger" : "alert-success")" role="alert">
+        @Message
+    </div>
+}
+
+@code {
+    [Parameter]
+    public string? Message { get; set; }
+}

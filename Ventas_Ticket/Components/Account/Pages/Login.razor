@@ -1,0 +1,79 @@
+@page "/Account/Login"
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.AspNetCore.Identity
+@using Ventas_Ticket.Components.Account
+@using Ventas_Ticket.Models
+
+@inject SignInManager<ApplicationUser> SignInManager
+@inject IdentityRedirectManager RedirectManager
+
+<PageTitle>Iniciar sesion</PageTitle>
+
+<h1>Iniciar sesion</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <StatusMessage Message="@errorMessage" />
+        <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" role="alert" />
+
+            <div class="form-floating mb-3">
+                <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="nombre@ejemplo.com" />
+                <label>Correo electronico</label>
+                <ValidationMessage For="() => Input.Email" class="text-danger" />
+            </div>
+            <div class="form-floating mb-3">
+                <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="contrasena" />
+                <label>Contrasena</label>
+                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            </div>
+            <div class="checkbox mb-3">
+                <label class="form-label">
+                    <InputCheckbox @bind-Value="Input.RememberMe" /> Recuerdame
+                </label>
+            </div>
+            <button type="submit" class="w-100 btn btn-lg btn-primary">Iniciar sesion</button>
+        </EditForm>
+    </div>
+</div>
+
+<p>
+    <a href="Account/Register">¿No tienes cuenta? Registrate</a>
+</p>
+
+@code {
+    private string? errorMessage;
+
+    [SupplyParameterFromForm]
+    private InputModel Input { get; set; } = new();
+
+    [SupplyParameterFromQuery]
+    private string? ReturnUrl { get; set; }
+
+    public async Task LoginUser()
+    {
+        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
+        if (result.Succeeded)
+        {
+            RedirectManager.RedirectTo(ReturnUrl ?? "/");
+        }
+        else
+        {
+            errorMessage = "Error: correo o contrasena incorrectos.";
+        }
+    }
+
+    private sealed class InputModel
+    {
+        [Required(ErrorMessage = "El correo es obligatorio.")]
+        [EmailAddress]
+        public string Email { get; set; } = "";
+
+        [Required(ErrorMessage = "La contrasena es obligatoria.")]
+        public string Password { get; set; } = "";
+
+        public bool RememberMe { get; set; }
+    }
+}

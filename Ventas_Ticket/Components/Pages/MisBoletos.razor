@@ -1,0 +1,64 @@
+@page "/mis-boletos"
+@attribute [Authorize]
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Ventas_Ticket.Data
+@using Ventas_Ticket.Models
+@inject AppDbContext Db
+@inject AuthenticationStateProvider AuthProvider
+
+<PageTitle>Mis Boletos</PageTitle>
+
+<h1>Mis Boletos</h1>
+
+@if (compras is null)
+{
+    <p><em>Cargando...</em></p>
+}
+else if (!compras.Any())
+{
+    <p>Aun no has comprado boletos.</p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Evento</th>
+                <th>Cantidad</th>
+                <th>Total pagado</th>
+                <th>Fecha de compra</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var c in compras)
+            {
+                <tr>
+                    <td>@c.Evento?.Nombre</td>
+                    <td>@c.Cantidad</td>
+                    <td>@c.PrecioTotal.ToString("C")</td>
+                    <td>@c.FechaCompra.ToString("dd/MM/yyyy HH:mm")</td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+
+@code {
+    private List<Compra>? compras;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthProvider.GetAuthenticationStateAsync();
+        var userId = authState.User.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value;
+
+        if (userId is not null)
+        {
+            compras = await Db.Compras
+                .Include(c => c.Evento)
+                .Where(c => c.UsuarioId == userId)
+                .OrderByDescending(c => c.FechaCompra)
+                .ToListAsync();
+        }
+    }
+}
